@@ -20,19 +20,23 @@
   3 - One Hertz Beat (enable #define MENU_ITEM 2 statement, compile and flash code)
   As the name suggests this pattern generates one EL wire flash per second. The EL wire is kept on for 100 milliseconds during each flash. This flash pattern continues indefinitely.
 
+  4 - Count to Three (enable #define MENU_ITEM 3 statement, compile and flash code)
+  This pattern starts with a single flash (i.e., count 1) and then gradually goes up to three. Each count has faster flashes than the previous one.
+
   Of course, there are countless flashing patterns that can be created using this code and we presented only the above three as examples. You can use this code as a template and add your own to expand the functionality.
 
   P.S. We have also included a serial monitoring functionality which you can use to debug your code during development. Simply comment in #define SERIAL_DEBUG_ON statement and call serialObj.print("<add your debug string>")
   statement wherever you need to write to serial port.
 
   by circuitapps
-  January 2024
+  February 2024
 */
 
 // MENU OF AVAILABLE FLASHING PATTERNS. CHOOSE THE ONE YOU WANT TO SEE, COMPILE THE CODE AND FLASH TO THE ATTINY85 TO SEE THE RESULTS!
-#define MENU_ITEM 0  // Activates Psychedelic Bounce flashing pattern
+//#define MENU_ITEM 0  // Activates Psychedelic Bounce flashing pattern
 //#define MENU_ITEM 1  // Activates True Chaos flashing pattern (i.e., pure random flashing behavior)
 //#define MENU_ITEM 2  // Activates One Hertz Beat flashing pattern (i.e., one flash every second)
+#define MENU_ITEM 3  // Activates Count to Three flashing pattern (i.e., flash period gets smaller with increasing count)
 
 // Why not try and add your own unique flashing patterns ?
 
@@ -40,8 +44,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////// USERS DO NOT NEED TO MODIFY ANYTHING BELOW THIS LINE. CURIOUS USERS ARE WELCOME TO EXPLORE & EXPERIMENT OF COURSE :) /////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 
 #include <avr/io.h>
@@ -202,6 +204,34 @@ void (*pattern_1_funcs[])(unsigned int) = {&turn_on,  &wait_ms,   &turn_off,   &
   }
 #endif   // MENU_ITEM == 2
 
+
+#if MENU_ITEM == 3  // Count to Three pattern
+    unsigned int *pattern_1_func_args[] = {
+                                              (unsigned int[]){ELW_OUT_PIN,       100,         ELW_OUT_PIN,  900},
+                                              (unsigned int[]){ELW_OUT_PIN,       100,         ELW_OUT_PIN,  450},
+                                              (unsigned int[]){ELW_OUT_PIN,       100,         ELW_OUT_PIN,  450},
+                                              (unsigned int[]){ELW_OUT_PIN,       100,         ELW_OUT_PIN,  300},
+                                              (unsigned int[]){ELW_OUT_PIN,       100,         ELW_OUT_PIN,  300},
+                                              (unsigned int[]){ELW_OUT_PIN,       100,         ELW_OUT_PIN,  300}
+                                            };
+
+  void count_to_three()
+  {
+    int num_pattern_1_elements = sizeof(pattern_1_funcs) / sizeof(pattern_1_funcs[0]);
+    int num_pattern_rows = sizeof(pattern_1_func_args) / sizeof(pattern_1_func_args[0]);
+
+    while(1)
+    {
+        for(int j=0; j<num_pattern_rows ; ++j)
+        {
+          for(int i=0 ; i < num_pattern_1_elements; ++i)
+            pattern_1_funcs[i](pattern_1_func_args[j][i]);  // calling the function via function pointers and the specified function argument.
+        }
+    }
+
+  }
+#endif   // MENU_ITEM == 2
+
 /////////////////////////////////////////////////////////////////////////////////
 
 // the setup function runs once when you press reset or power the board
@@ -229,6 +259,8 @@ void loop() {
     true_chaos();
   #elif MENU_ITEM == 2
     one_hertz_beat();
+  #elif MENU_ITEM == 3
+    count_to_three();
   #else
     // Do nothing
   #endif
